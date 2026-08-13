@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import json
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
@@ -159,8 +161,11 @@ def get_comprehensive_vehicle_details(rc_number: str) -> dict:
 def handler(request):
     """Vercel serverless handler"""
     
-    # Handle home route
-    if request.path == "/" or request.path == "":
+    path = request.path
+    query = request.query if hasattr(request, 'query') else {}
+    
+    # Home route
+    if path == "/" or path == "":
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
@@ -172,17 +177,17 @@ def handler(request):
             })
         }
     
-    # Handle health check
-    if request.path == "/health":
+    # Health check
+    if path == "/health":
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"status": "healthy", "message": "Server is running"})
         }
     
-    # Handle vehicle info API
-    if request.path == "/api/vehicle-info":
-        rc_number = request.args.get('rc', '').strip() if hasattr(request, 'args') else ""
+    # Vehicle info API
+    if path == "/api/vehicle-info":
+        rc_number = request.query.get('rc', '') if hasattr(request, 'query') else ""
         
         if not rc_number:
             return {
@@ -202,7 +207,7 @@ def handler(request):
             "body": json.dumps(data)
         }
     
-    # 404 handler
+    # 404
     return {
         "statusCode": 404,
         "headers": {"Content-Type": "application/json"},
